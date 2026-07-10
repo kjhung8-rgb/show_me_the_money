@@ -1,3 +1,5 @@
+const APP_VERSION = "20260710-2045";
+
 const STORAGE_KEYS = {
   totalAsset: "smtm_total_asset",
   accountNumber: "smtm_account_number",
@@ -83,6 +85,86 @@ const DEPOSIT_REASONS = [
   "회장님 용돈",
   "알 수 없는 투자수익",
   "자산증식 이벤트",
+  "초과수익 정산",
+  "특별 배당금",
+  "프리미엄 고객 감사금",
+  "VIP 우대 입금",
+  "미래가치 선반영 입금",
+  "복리 효과 실시간 반영",
+  "장기투자 보상금",
+  "잔고 성장 지원금",
+  "자산관리 리워드",
+  "고객등급 상승 보너스",
+  "기준금리 위로금",
+  "물가상승 대응 입금",
+  "경제성장 참여 보상",
+  "금융시장 안정지원금",
+  "통화량 증가분 배정",
+  "예상 밖 현금흐름",
+  "잊고 있던 배당금",
+  "수익률 기분전환금",
+  "오늘의 운세 적중금",
+  "잔액 미화 지원금",
+  "나스닥 고래 보너스",
+  "테헤란로 현금흐름",
+  "여의도 큰손 정산",
+  "실리콘밸리 축하금",
+  "월가 비밀 리워드",
+  "국제 자산 이동",
+  "글로벌 유동성 유입",
+  "해외 큰손 감사금",
+  "우연한 투자 성공금",
+  "지나가던 재벌 입금",
+  "회장님 기분 좋아짐",
+  "CEO 긴급 송금",
+  "대표님 랜덤 후원",
+  "재벌가 용돈 분배",
+  "상속세 계산 전 입금",
+  "부자 체험권 환급",
+  "경제 뉴스 출연료",
+  "금융권 관심 보상",
+  "은행원 말투 변경비",
+  "VIP 라운지 이용료 환급",
+  "출금불가 위로금",
+  "점검시간 보상금",
+  "은행점검 장기고객 혜택",
+  "이체 실패 리워드",
+  "입금만 가능 보너스",
+  "출금 버튼 관상료",
+  "정기점검 참여 수당",
+  "24시간 점검 특별금",
+  "해지불가 상품 가입축하금",
+  "대기시간 인내 보상금",
+  "AI가 몰래 벌어옴",
+  "로봇 자동매매 정산",
+  "알고리즘 기분전환 수익",
+  "서버가 심심해서 입금",
+  "버그성 자산 증가",
+  "캐시 초기화 실패 보상",
+  "데이터베이스 감동 입금",
+  "클라우드 수익 공유",
+  "코드가 알아서 벌어옴",
+  "로컬스토리지 효도금",
+  "우주 채굴 수익",
+  "화성 부동산 배당",
+  "달나라 임대수익",
+  "위성광고 정산금",
+  "외계 투자자 후원금",
+  "은하계 유동성 공급",
+  "블랙홀 이자수익",
+  "우주선 보험 환급",
+  "행성 개발 배당금",
+  "지구 대표 보상금",
+  "현실감 상실 입금",
+  "행복지수 연동 보너스",
+  "자존감 상승 지원금",
+  "기분 좋은 착각 정산",
+  "월요일 생존 수당",
+  "퇴근 장려금",
+  "커피값 100년치 환급",
+  "숨만 쉬어도 들어온 돈",
+  "아무튼 입금",
+  "설명 불가 입금"
 ];
 
 const BANK_INITIALS = [
@@ -1258,6 +1340,7 @@ function bindEvents() {
 }
 
 function init() {
+  registerAppServiceWorker();
   bindEvents();
   preventDoubleTapZoom();
 
@@ -1272,6 +1355,28 @@ function init() {
   startApp();
 }
 
+function registerAppServiceWorker() {
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
+
+  let reloadingForUpdate = false;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloadingForUpdate) {
+      return;
+    }
+
+    reloadingForUpdate = true;
+    window.location.reload();
+  });
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(`./sw.js?v=${APP_VERSION}`)
+      .then((registration) => registration.update())
+      .catch(() => {});
+  });
+}
 init();
 
 
