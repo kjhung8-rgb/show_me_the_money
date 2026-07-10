@@ -1,0 +1,164 @@
+﻿<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>입금요정🧚🏻</title>
+    <meta name="theme-color" content="#f7f8f0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" type="image/png" href="./assets/app-icon.png?v=20260710-1758" />
+    <link rel="apple-touch-icon" href="./assets/app-icon.png?v=20260710-1758" />
+    <link rel="stylesheet" href="./style.css?v=20260710-1948" />
+  </head>
+  <body>
+    <div class="notification deposit-notification" id="depositNotification" aria-live="polite">
+      <div class="bank-icon" aria-hidden="true">
+        <span id="bankInitials">KB</span>
+      </div>
+      <div class="notification-body">
+        <div class="notification-top">
+          <strong>입금 <span id="noticeAmountTop">0원</span></strong>
+          <span>지금</span>
+        </div>
+        <p id="noticeLineOne">고객님 00/00 00:00 000000-**-**000</p>
+        <p id="noticeLineTwo">상호명 FBS 입금</p>
+        <p id="noticeLineThree">입금 0원</p>
+        <p id="noticeLineFour">잔금 0원</p>
+      </div>
+    </div>
+
+    <div class="sound-bubble" id="soundBubble" aria-live="polite">띵동 💸</div>
+
+    <main class="app-shell">
+      <section class="bank-panel" aria-label="자산 현황">
+        <header class="top-bar">
+          <div>
+            <p class="eyebrow">프리미엄 자산관리 서비스</p>
+            <h1>입금요정🧚🏻</h1>
+          </div>
+          <button class="icon-button" type="button" aria-label="알림 다시 보기" id="replayNotice">
+            <span aria-hidden="true">!</span>
+          </button>
+        </header>
+
+        <div class="account-card">
+          <div class="account-box">
+            <span class="label">입출금 계좌</span>
+            <strong id="accountNumber">0000000-00-000000</strong>
+          </div>
+        </div>
+
+        <section class="asset-area">
+          <span class="label">나의 총 자산</span>
+          <strong id="totalAsset">0원</strong>
+          <div class="grade-chip">
+            <span id="assetGradeName">씨앗 자산가</span>
+            <small id="assetGradeMessage">입금의 기운이 느껴집니다</small>
+          </div>
+          <p>
+            <span id="merchantName">누군가</span>님이
+            <span id="depositAmount">0원</span>을 방금 입금했습니다.
+          </p>
+        </section>
+
+        <div class="quick-grid" aria-label="빠른 현황">
+          <button class="quick-card attempt-card" type="button" id="todayDepositButton" aria-label="전체 입금 내역 보기">
+            <span>오늘 입금</span>
+            <strong id="todayDeposit">0원</strong>
+            <span class="quick-arrow" aria-hidden="true">›</span>
+          </button>
+          <button class="quick-card attempt-card" type="button" id="attemptSummaryButton" aria-label="출금 시도 기록 보기">
+            <span>출금 실패</span>
+            <strong id="quickAttemptCount">0회</strong>
+            <span class="quick-arrow" aria-hidden="true">›</span>
+          </button>
+        </div>
+
+        <div class="actions">
+          <button type="button" id="transferButton">이체하기</button>
+          <button type="button" id="depositButton">입금하기</button>
+        </div>
+
+        <nav class="feature-tabs" aria-label="부가 기능">
+          <button type="button" class="active" data-view="ranking">입금랭킹</button>
+          <button type="button" data-view="grades">자산등급</button>
+          <button type="button" data-view="products">금융상품</button>
+          <button type="button" data-view="center">고객센터</button>
+        </nav>
+
+        <section class="feature-view active" id="rankingView" data-view-panel="ranking">
+          <div class="section-heading">
+            <span class="label">입금 랭킹</span>
+            <h2>오늘의 입금 TOP 3</h2>
+          </div>
+          <ol class="ranking-list" id="rankingList"></ol>
+        </section>
+
+        <section class="feature-view" id="historyView" data-view-panel="history">
+          <div class="section-heading split-heading">
+            <div>
+              <span class="label">전체 입금 내역</span>
+              <h2>이때까지 들어온 돈</h2>
+            </div>
+            <button class="small-link" type="button" id="historyBackButton">뒤로</button>
+          </div>
+          <div class="history-list" id="depositHistoryList"></div>
+        </section>
+
+        <section class="feature-view" id="gradesView" data-view-panel="grades">
+          <div class="section-heading">
+            <span class="label">자산 등급 시스템</span>
+            <h2 id="gradeViewTitle">씨앗 자산가</h2>
+          </div>
+          <p class="plain-copy" id="gradeViewMessage">입금의 기운이 느껴집니다</p>
+          <div class="grade-list" id="gradeList"></div>
+        </section>
+
+        <section class="feature-view" id="productsView" data-view-panel="products">
+          <div class="section-heading">
+            <span class="label">입금요정 추천상품</span>
+            <h2>가입은 빠르고 해지는 불가능합니다</h2>
+          </div>
+          <div class="product-list" id="productList"></div>
+        </section>
+
+        <section class="feature-view" id="centerView" data-view-panel="center">
+          <div class="section-heading">
+            <span class="label">고객센터</span>
+            <h2>VIP 고객센터 연결 중...</h2>
+          </div>
+          <div class="support-box">
+            <span>대기 인원</span>
+            <strong id="waitingPeople">9,999,999명</strong>
+          </div>
+          <div class="support-box">
+            <span>예상 대기 시간</span>
+            <strong id="waitingYears">315년</strong>
+          </div>
+          <button class="sub-action" type="button" id="refreshCenter">다시 연결</button>
+        </section>
+      </section>
+    </main>
+
+    <div class="modal-backdrop" id="appModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal">
+        <h2 id="modalTitle">은행점검 시간입니다.</h2>
+        <p id="modalMessage">정기 점검시간 : 00:00~23:59</p>
+        <label class="modal-field" id="customerNameField" hidden>
+          <span>이름 혹은 닉네임</span>
+          <input id="customerNameInput" type="text" maxlength="16" autocomplete="nickname" placeholder="예: 춘식이" />
+          <small id="customerNameError" hidden>이름 혹은 닉네임을 입력해주세요.</small>
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="closeModal">확인</button>
+          <button class="secondary" type="button" id="secondaryModalButton" hidden>뒤로가기</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./script.js?v=20260710-1948"></script>
+  </body>
+</html>
+
+
