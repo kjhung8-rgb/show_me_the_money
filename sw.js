@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = "20260710-2045";
+const APP_VERSION = "20260710-2110";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

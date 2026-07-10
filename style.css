@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: light;
   --ink: #141414;
   --muted: #68707a;
@@ -783,48 +783,78 @@ button.quick-card:hover {
 }
 
 .history-list {
-  max-height: 330px;
   display: grid;
-  gap: 8px;
-  overflow: auto;
-  padding-right: 2px;
+  gap: 6px;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .history-row {
-  padding: 13px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "time amount"
+    "merchant total"
+    "account total";
+  column-gap: 10px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 10px;
   background: #fff;
 }
 
+.history-row .label {
+  grid-area: time;
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
 .history-row strong {
-  display: block;
-  margin-top: 5px;
-  font-size: 14px;
+  grid-area: merchant;
+  min-width: 0;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .history-row p {
-  margin-top: 4px;
+  grid-area: account;
+  min-width: 0;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 .history-row em {
-  display: block;
-  margin-top: 8px;
+  grid-area: amount;
+  margin-top: 0;
   color: var(--green);
   font-style: normal;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 900;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .history-row small {
-  display: block;
-  margin-top: 3px;
+  grid-area: total;
+  align-self: end;
+  margin-top: 2px;
   color: #6f7782;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .empty-state {

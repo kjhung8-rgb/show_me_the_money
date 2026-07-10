@@ -2,7 +2,7 @@
   "name": "입금요정",
   "short_name": "입금요정",
   "description": "켜질 때마다 랜덤 입금 알림이 오는 장난성 금융 웹앱",
-  "start_url": "./?v=20260710-2045",
+  "start_url": "./?v=20260710-2110",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f7f8f0",

@@ -1,4 +1,4 @@
-const APP_VERSION = "20260710-2045";
+const APP_VERSION = "20260710-2110";
 
 const STORAGE_KEYS = {
   totalAsset: "smtm_total_asset",
@@ -19,6 +19,7 @@ const DEPOSIT_COOLDOWN_MS = {
 };
 
 const MAX_DEPOSIT_HISTORY_ENTRIES = 500;
+const RECENT_DEPOSIT_HISTORY_LIMIT = 20;
 
 const CEO_MERCHANTS = [
   "삼성 이재용 회장",
@@ -966,7 +967,7 @@ function renderRanking() {
 }
 
 function renderDepositHistoryPage() {
-  const history = readDepositHistory().slice().reverse();
+  const history = readDepositHistory().slice().reverse().slice(0, RECENT_DEPOSIT_HISTORY_LIMIT);
   dom.depositHistoryList.replaceChildren();
 
   if (history.length === 0) {
