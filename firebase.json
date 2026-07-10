@@ -1,4 +1,4 @@
-﻿{
+{
   "hosting": {
     "public": ".",
     "ignore": [
@@ -9,12 +9,17 @@
       ".gitignore",
       ".firebase",
       ".firebase/**",
+      "README.md",
+      "AGENTS.md",
+      ".env",
+      ".env.*",
+      "*.log",
       "firebase-debug.log",
       "node_modules",
-      "node_modules/**"
+      "node_modules/**",
+      ".DS_Store"
     ],
     "cleanUrls": true,
     "trailingSlash": false
   }
 }
-

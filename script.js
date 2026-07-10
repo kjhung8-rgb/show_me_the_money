@@ -1,4 +1,4 @@
-﻿const STORAGE_KEYS = {
+const STORAGE_KEYS = {
   totalAsset: "smtm_total_asset",
   accountNumber: "smtm_account_number",
   withdrawAttempts: "smtm_withdraw_attempts",
@@ -15,6 +15,8 @@ const DEPOSIT_COOLDOWN_MS = {
   min: 60_000,
   max: 300_000,
 };
+
+const MAX_DEPOSIT_HISTORY_ENTRIES = 500;
 
 const CEO_MERCHANTS = [
   "삼성 이재용 회장",
@@ -450,6 +452,45 @@ function randomBigInt(min, max) {
   return min + candidate;
 }
 
+function normalizeMoneyString(value) {
+  if (typeof value === "bigint" && value >= 0n) {
+    return value.toString();
+  }
+
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+    return String(value);
+  }
+
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    return value;
+  }
+
+  return null;
+}
+
+function safeBigInt(value, fallback = 0n) {
+  const normalized = normalizeMoneyString(value);
+
+  return normalized === null ? fallback : BigInt(normalized);
+}
+
+function safeText(value, fallback) {
+  const text = typeof value === "string" ? value.trim() : "";
+
+  return text ? text.slice(0, 80) : fallback;
+}
+
+function createTextElement(tagName, textContent, className) {
+  const element = document.createElement(tagName);
+
+  if (className) {
+    element.className = className;
+  }
+
+  element.textContent = textContent;
+  return element;
+}
+
 function randomDigits(length) {
   return Array.from({ length }, () => randomInt(0, 9)).join("");
 }
@@ -510,11 +551,7 @@ function getOrCreateAccountNumber() {
 function getSavedBigInt(key) {
   const saved = localStorage.getItem(key);
 
-  if (!saved || !/^\d+$/.test(saved)) {
-    return 0n;
-  }
-
-  return BigInt(saved);
+  return safeBigInt(saved);
 }
 
 function getSavedNumber(key) {
@@ -603,13 +640,46 @@ function updateTodayDepositTotal(depositAmount) {
 }
 
 function appendDepositHistory(entry) {
-  const history = readJsonArray(STORAGE_KEYS.depositHistory);
-  history.push(entry);
-  writeJsonArray(STORAGE_KEYS.depositHistory, history);
+  const history = readDepositHistory();
+  const normalizedEntry = normalizeDepositHistoryEntry(entry);
+
+  if (!normalizedEntry) {
+    return;
+  }
+
+  const nextHistory = [...history, normalizedEntry].slice(-MAX_DEPOSIT_HISTORY_ENTRIES);
+  writeJsonArray(STORAGE_KEYS.depositHistory, nextHistory);
 }
 
 function readDepositHistory() {
-  return readJsonArray(STORAGE_KEYS.depositHistory);
+  const history = readJsonArray(STORAGE_KEYS.depositHistory)
+    .map(normalizeDepositHistoryEntry)
+    .filter(Boolean)
+    .slice(-MAX_DEPOSIT_HISTORY_ENTRIES);
+
+  writeJsonArray(STORAGE_KEYS.depositHistory, history);
+  return history;
+}
+
+function normalizeDepositHistoryEntry(entry) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+
+  const amount = normalizeMoneyString(entry.amount);
+  const totalAsset = normalizeMoneyString(entry.totalAsset);
+
+  if (amount === null || totalAsset === null) {
+    return null;
+  }
+
+  return {
+    createdAt: typeof entry.createdAt === "string" ? entry.createdAt : new Date().toISOString(),
+    merchantName: safeText(entry.merchantName, "알 수 없는 입금자"),
+    depositReason: safeText(entry.depositReason, "알 수 없는 입금"),
+    amount,
+    totalAsset,
+  };
 }
 
 function getInitialRankingRecords() {
@@ -619,22 +689,57 @@ function getInitialRankingRecords() {
   }));
 }
 
+function resetRankingRecords() {
+  const initialRecords = getInitialRankingRecords();
+
+  localStorage.setItem(STORAGE_KEYS.rankingDate, getTodayKey());
+  localStorage.setItem(STORAGE_KEYS.rankingRecords, JSON.stringify(initialRecords));
+  return initialRecords;
+}
+
+function normalizeRankingRecords(records) {
+  if (!Array.isArray(records)) {
+    return [];
+  }
+
+  return records
+    .map((record) => {
+      if (!record || typeof record !== "object") {
+        return null;
+      }
+
+      const name = safeText(record.name, "");
+      const amount = normalizeMoneyString(record.amount);
+
+      return name && amount !== null ? { name, amount } : null;
+    })
+    .filter(Boolean);
+}
+
 function readRankingRecords() {
   const todayKey = getTodayKey();
   const savedDate = localStorage.getItem(STORAGE_KEYS.rankingDate);
   const savedRecords = localStorage.getItem(STORAGE_KEYS.rankingRecords);
 
   if (savedDate !== todayKey || !savedRecords) {
-    const initialRecords = getInitialRankingRecords();
-    localStorage.setItem(STORAGE_KEYS.rankingDate, todayKey);
-    localStorage.setItem(STORAGE_KEYS.rankingRecords, JSON.stringify(initialRecords));
-    return initialRecords;
+    return resetRankingRecords();
   }
 
   try {
-    return JSON.parse(savedRecords);
+    const parsedRecords = JSON.parse(savedRecords);
+    const records = normalizeRankingRecords(parsedRecords);
+
+    if (records.length === 0) {
+      return resetRankingRecords();
+    }
+
+    if (records.length !== parsedRecords.length) {
+      writeRankingRecords(records);
+    }
+
+    return records;
   } catch {
-    return getInitialRankingRecords();
+    return resetRankingRecords();
   }
 }
 
@@ -657,8 +762,14 @@ function updateRankingWithDeposit(merchantName, depositAmount) {
 
 function getTopRankingRecords() {
   return readRankingRecords()
-    .map((record) => ({ ...record, amountValue: BigInt(record.amount) }))
-    .sort((a, b) => (a.amountValue > b.amountValue ? -1 : 1))
+    .map((record) => ({ ...record, amountValue: safeBigInt(record.amount) }))
+    .sort((a, b) => {
+      if (a.amountValue === b.amountValue) {
+        return 0;
+      }
+
+      return a.amountValue > b.amountValue ? -1 : 1;
+    })
     .slice(0, 3);
 }
 
@@ -754,86 +865,87 @@ function renderNotification() {
 }
 
 function renderRanking() {
-  const rows = getTopRankingRecords()
-    .map(
-      (record, index) => `
-        <li>
-          <button class="ranking-row" type="button" data-ranking-alert="true">
-            <div>
-              <span>${index + 1}위</span>
-              <strong>${record.name}</strong>
-            </div>
-            <em>+${formatWon(record.amountValue)}</em>
-          </button>
-        </li>
-      `,
-    )
-    .join("");
+  dom.rankingList.replaceChildren();
 
-  dom.rankingList.innerHTML = rows;
+  getTopRankingRecords().forEach((record, index) => {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    const copy = document.createElement("div");
+    const amount = createTextElement("em", `+${formatWon(record.amountValue)}`);
+
+    button.className = "ranking-row";
+    button.type = "button";
+    button.dataset.rankingAlert = "true";
+    copy.append(createTextElement("span", `${index + 1}위`), createTextElement("strong", record.name));
+    button.append(copy, amount);
+    item.append(button);
+    dom.rankingList.append(item);
+  });
 }
 
 function renderDepositHistoryPage() {
   const history = readDepositHistory().slice().reverse();
+  dom.depositHistoryList.replaceChildren();
 
   if (history.length === 0) {
-    dom.depositHistoryList.innerHTML = `<div class="empty-state">아직 기록된 입금이 없습니다.</div>`;
+    dom.depositHistoryList.append(createTextElement("div", "아직 기록된 입금이 없습니다.", "empty-state"));
     return;
   }
 
-  dom.depositHistoryList.innerHTML = history
-    .map((entry) => {
-      const createdAt = new Date(entry.createdAt);
-      const date = Number.isNaN(createdAt.getTime()) ? new Date() : createdAt;
-      const { date: dateText, time } = getDateTimeParts(date);
-      const amount = BigInt(entry.amount || "0");
-      const totalAsset = BigInt(entry.totalAsset || "0");
+  history.forEach((entry) => {
+    const createdAt = new Date(entry.createdAt);
+    const date = Number.isNaN(createdAt.getTime()) ? new Date() : createdAt;
+    const { date: dateText, time } = getDateTimeParts(date);
+    const row = document.createElement("article");
 
-      return `
-        <article class="history-row">
-          <span class="label">${dateText} ${time}</span>
-          <strong>${entry.merchantName} ${entry.depositReason}</strong>
-          <p>계좌 ${maskAccountNumber(appState.accountNumber)}</p>
-          <em>입금 ${formatWon(amount)}</em>
-          <small>잔금 ${formatWon(totalAsset)}</small>
-        </article>
-      `;
-    })
-    .join("");
+    row.className = "history-row";
+    row.append(
+      createTextElement("span", `${dateText} ${time}`, "label"),
+      createTextElement("strong", `${entry.merchantName} ${entry.depositReason}`),
+      createTextElement("p", `계좌 ${maskAccountNumber(appState.accountNumber)}`),
+      createTextElement("em", `입금 ${formatWon(safeBigInt(entry.amount))}`),
+      createTextElement("small", `잔금 ${formatWon(safeBigInt(entry.totalAsset))}`),
+    );
+    dom.depositHistoryList.append(row);
+  });
 }
+
 function renderGrades() {
   dom.gradeViewTitle.textContent = appState.currentGrade.name;
   dom.gradeViewMessage.textContent = appState.currentGrade.message;
-  dom.gradeList.innerHTML = ASSET_GRADES.slice()
+  dom.gradeList.replaceChildren();
+
+  ASSET_GRADES.slice()
     .reverse()
-    .map((grade) => {
+    .forEach((grade) => {
       const isCurrent = grade.name === appState.currentGrade.name;
-      return `
-        <div class="grade-item ${isCurrent ? "current" : ""}">
-          <strong>${grade.name}</strong>
-          <span>${grade.range} · ${grade.message}</span>
-        </div>
-      `;
-    })
-    .join("");
+      const item = document.createElement("div");
+
+      item.className = `grade-item${isCurrent ? " current" : ""}`;
+      item.append(createTextElement("strong", grade.name), createTextElement("span", `${grade.range} · ${grade.message}`));
+      dom.gradeList.append(item);
+    });
 }
 
 function renderProducts() {
-  dom.productList.innerHTML = FINANCIAL_PRODUCTS.map((product, index) => {
-    const joined = appState.joinedProducts.has(product.name);
+  dom.productList.replaceChildren();
 
-    return `
-      <div class="product-row">
-        <div class="product-copy">
-          <strong>${product.name}</strong>
-          <p>${product.desc}</p>
-        </div>
-        <button class="${joined ? "danger" : ""}" type="button" data-product-index="${index}">
-          ${joined ? "해지 불가능" : "가입"}
-        </button>
-      </div>
-    `;
-  }).join("");
+  FINANCIAL_PRODUCTS.forEach((product, index) => {
+    const joined = appState.joinedProducts.has(product.name);
+    const row = document.createElement("div");
+    const copy = document.createElement("div");
+    const button = document.createElement("button");
+
+    row.className = "product-row";
+    copy.className = "product-copy";
+    copy.append(createTextElement("strong", product.name), createTextElement("p", product.desc));
+    button.className = joined ? "danger" : "";
+    button.type = "button";
+    button.dataset.productIndex = String(index);
+    button.textContent = joined ? "해지 불가능" : "가입";
+    row.append(copy, button);
+    dom.productList.append(row);
+  });
 }
 
 function renderCustomerCenter() {

@@ -97,8 +97,8 @@ https://show-me-the-money-9d983.web.app
 `index.html`에서 CSS와 JavaScript 파일 뒤에 버전 쿼리를 붙여 캐시를 갱신합니다.
 
 ```html
-<link rel="stylesheet" href="./style.css?v=20260710-1948" />
-<script src="./script.js?v=20260710-1948"></script>
+<link rel="stylesheet" href="./style.css?v=20260710-2010" />
+<script src="./script.js?v=20260710-2010"></script>
 ```
 
 수정했는데 모바일에서 바로 반영되지 않으면 버전 값을 올리고 다시 배포하면 됩니다. 홈화면에 추가한 앱 아이콘이나 PWA 아이콘은 브라우저 캐시와 별개로 오래 남을 수 있어, 필요하면 홈화면 아이콘을 삭제한 뒤 다시 추가해야 합니다.
